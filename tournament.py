@@ -6,36 +6,43 @@
 import psycopg2
 
 
-def connect():
+def connect(database_name="tournament"):
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
-
+    try:
+        db = psycopg2.connect("dbname={}".format(database_name))
+        cursor = db.cursor()
+        return db, cursor
+    except:
+        print ("DB connection error")
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("DELETE FROM matches;")
     conn.commit()
     cur.close()
     conn.close()
+
+
 def deletePlayers():
     """Remove all the player records from the database."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("DELETE FROM players;")
     conn.commit()
     cur.close()
     conn.close()
+
+
 def countPlayers():
     """Returns the number of players currently registered."""
-    conn = connect()
-    cur = conn.cursor()
+    conn, cur = connect()
     cur.execute("SELECT count(id) FROM players;")
     a = cur.fetchone()
     cur.close()
     conn.close()
     return a[0]
+
+
 def registerPlayer(name):
     """Adds a player to the tournament database.
   
@@ -45,8 +52,7 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn,cur = connect()
     cur.execute ("INSERT INTO players(name) VALUES (%s);",(name,))
     conn.commit()
     cur.close()
@@ -64,8 +70,7 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    conn = connect()
-    cur=  conn.cursor()
+    conn, cur = connect()
     cur.execute ("SELECT * FROM standings;")
     a = cur.fetchall()
     cur.close()
@@ -79,8 +84,7 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
-    conn = connect()
-    cur = conn.cursor()
+    conn,cur = connect()
     cur.execute("INSERT INTO matches (winner,loser) VALUES(%s,%s)",(winner,loser))
     conn.commit()
     cur.close()
@@ -101,10 +105,7 @@ def swissPairings():
         name2: the second player's name
     """
     pairings = []
-    conn = connect()
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM standings;")
-    a = cur.fetchall()
+    a = playerStandings()
     if len(a) % 2 == 0:
 # If even then proceed 
         for x in range(0,len(a),2):
